@@ -34,3 +34,9 @@ let print_thing th =
 let print_stack st =
   print_endline "STACK: " ;
   Stack.iter print_thing st
+
+let print_dictionary dict =
+  print_endline "VARIABLES: " ;
+  Hashtbl.iter (fun name value ->
+                  print_string (name ^ " --> ") ;
+                  print_thing value) dict

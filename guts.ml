@@ -150,6 +150,12 @@ let rec execute_code code =
       put name obj
   | Line points -> draw_line (List.map to_point points)
   | Circle rs -> draw_circles (pick_point ()) (List.map to_float rs)
+  | Distance ->
+      let px, py = pick_point () in
+      let qx, qy = pick_point () in
+      let dx = px -. qx in
+      let dy = py -. qy in
+      push (Number (sqrt (dx *. dx +. dy *. dy)))
   | Ellipse ->
       let len = pick_float () in
       let f2 = pick_point () in
@@ -176,7 +182,10 @@ let rec execute_code code =
                                     let angle = fi *. step +. rotation in
                                     let dx, dy = from_polar radius angle in
                                     (centerx +. dx, centery +. dy)))))
+  | Ngonloop _ -> failwith "Loop end without loop start"
+  | Pop -> ignore (pop ())
   | PrintStack -> Debug.print_stack dst
+  | PrintDictionary -> Debug.print_dictionary var_table
   | LoopStart ->
       let _ = print_endline "recording loop" in
       let () = Queue.clear saved_loop_cmds in
