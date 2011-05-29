@@ -1,104 +1,14 @@
 open Types
 open Plotting
+open Variables
+open Binops
 
-let var_table = Hashtbl.create 16
-let loop_vertices = Stack.create ()
-let current_loop_count = Stack.create ()
 let saved_data_stacks =
   let st = Stack.create () in
   let stacks = Stack.create () in
   Stack.push st stacks ; stacks
 let saved_loop_cmds = Queue.create ()
 let data_stack () = Stack.top saved_data_stacks
-
-let get_vertex i =
-  let index = i + (Stack.top current_loop_count) in
-  let n, vs = (Stack.top loop_vertices) in
-  let k = if index >= n then index - n else index in
-  vs.(k)
-
-let get_from_table id =
-  try
-    Hashtbl.find var_table id
-  with Not_found ->
-    failwith ("No binding for " ^ id)
-
-let get id =
-  if id = "#" then Point (0., 0.)
-  else if id.[0] != 'V'
-  then
-    get_from_table id
-  else try
-      let n = int_of_string (String.sub id 1 (String.length id - 1)) in
-      get_vertex n
-  with _ ->
-    get_from_table id
-
-let put id value =
-  Hashtbl.replace var_table id value
-
-let get_float id =
-  match get id with
-  | Number x -> x
-  | _ -> failwith (id ^ " is not bound to float")
-
-let get_point id =
-  match get id with
-  | Point p -> p
-  | _ -> failwith (id ^ " is not bound to point")
-
-let get_figure id =
-  match get id with
-  | Figure f -> f
-  | _ -> failwith (id ^ " is not bound to figure")
-
-let to_float = function
-  | Number x -> x
-  | String s -> get_float s
-  | Point _ -> failwith "Expected float; got point"
-  | Figure _ -> failwith "Expected float; got figure"
-
-let to_string = function
-  | String s -> s
-  | Number _ -> failwith "Expected string; got float"
-  | Point _ -> failwith "Expected string; got point"
-  | Figure _ -> failwith "Expected string; got figure"
-
-let to_point = function
-  | String s -> get_point s
-  | Point p -> p
-  | Number _ -> failwith "Expected point; got float"
-  | Figure _ -> failwith "Expected point; got figure"
-
-let to_figure = function
-  | String s -> get_figure s
-  | Figure f -> f
-  | Number _ -> failwith "Expected figure; got float"
-  | Point _ -> failwith "Expected figure; got point"
-
-let float_binop x y op =
-  Number (op (to_float x) (to_float y))
-
-let point_binop p q op =
-  let px, py = (to_point p) in
-  let qx, qy = (to_point q) in
-  Point ((op px qx), (op py qy))
-
-let point_float_binop p x op =
-  let px, py = (to_point p) in
-  let xx = to_float x in
-  Point ((op px xx), (op py xx))
-
-let (@+) x y = float_binop x y (+.)
-let (@-) x y = float_binop x y (-.)
-let (@*) x y = float_binop x y ( *. )
-let (@/) x y = float_binop x y (/.)
-
-let (++) p q = point_binop p q (+.)
-let (--) p q = point_binop p q (-.)
-
-let (@**) p x = point_float_binop p x ( *. )
-let (@//) p x = point_float_binop p x (/.)
 
 ;;
 plot_init ()
@@ -108,16 +18,13 @@ let pi_2 = acos 0. *. 4.
 
 let in_loop = ref 0
 
-let from_polar radius angle =
-  (cos angle *. radius, sin angle *. radius)
-
 let npoint center total radius rotation i =
   let r = to_float radius in
   let step = pi_2 /. total  in
   let fi = float_of_int i in
   let rot_f = to_float rotation in
   let angle = fi *. step +. rot_f in
-  let delta = Point (from_polar r angle) in
+  let delta = Point (Geometry.from_polar r angle) in
   center ++ delta
 
 let rec execute_code code =
@@ -147,7 +54,7 @@ let rec execute_code code =
   | Assign ->
       let name = pick_string () in
       let obj = pop () in
-      put name obj
+      write_var name obj
   | Line points -> draw_line (List.map to_point points)
   | Circle rs -> draw_circles (pick_point ()) (List.map to_float rs)
   | Distance ->
@@ -180,12 +87,17 @@ let rec execute_code code =
                                   (fun i ->
                                     let fi = float_of_int i in
                                     let angle = fi *. step +. rotation in
-                                    let dx, dy = from_polar radius angle in
+                                    let dx, dy = Geometry.from_polar radius angle in
                                     (centerx +. dx, centery +. dy)))))
   | Ngonloop _ -> failwith "Loop end without loop start"
   | Pop -> ignore (pop ())
   | PrintStack -> Debug.print_stack dst
-  | PrintDictionary -> Debug.print_dictionary var_table
+  | PrintDictionary -> print_dictionary ()
+  | Pwalk ->
+      let dist = to_float (pop ()) in
+      let p = to_point (pop ()) in
+      let f = to_figure (pop ()) in
+      push (Point (Geometry.do_pwalk f p dist))
   | LoopStart ->
       let _ = print_endline "recording loop" in
       let () = Queue.clear saved_loop_cmds in
@@ -207,17 +119,16 @@ and process_command code =
           let tot_f = to_float total in
           let n = int_of_float tot_f in
           let vertices = Array.init n (npoint center tot_f radius rotation) in
-          let () = Stack.push (n, vertices) loop_vertices in
+          Loop_support.start_loop (n, vertices) ;
           let new_data_stack = Stack.create () in
           let () = Stack.push new_data_stack saved_data_stacks in
           let loop_cmds = Queue.copy saved_loop_cmds in
           in_loop := 0 ;
           for i = 1 to n do
-            Stack.push (i - 1) current_loop_count ;
             Queue.iter process_command loop_cmds ;
-            ignore (Stack.pop current_loop_count)
+            Loop_support.iteration_end i ;
           done ;
-          ignore (Stack.pop loop_vertices) ;
+          Loop_support.end_loop () ;
           ignore (Stack.pop saved_data_stacks)
         else
           in_loop := !in_loop - 1 ;
