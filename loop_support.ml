@@ -16,7 +16,8 @@ let drop_vertices () = ignore (Stack.pop loop_vertices)
 
 let start_loop vs =
   Stack.push vs loop_vertices ;
-  Stack.push 0 loop_count
+  Stack.push 0 loop_count ;
+  Data.new_data_stack ()
 
 let iteration_end i =
   drop_loop_count () ;
@@ -24,4 +25,5 @@ let iteration_end i =
 
 let end_loop () =
   drop_loop_count () ;
-  drop_vertices ()
+  drop_vertices () ;
+  Data.drop_data_stack ()
