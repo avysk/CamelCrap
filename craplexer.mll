@@ -4,7 +4,7 @@
 
 let digit = ['0'-'9']
 let sign = ['-' '+']
-let id = ['a'-'z'] ['a'-'z' '0'-'9' '-' '_' '\'']*
+let id = ['a'-'z' 'A'-'Z'] ['a'-'z' '0'-'9' '-' '_' '\'']*
 
 rule token = parse
   | ';'[^'\n']*'\n'     { token lexbuf }
@@ -26,7 +26,15 @@ rule token = parse
   | "..."         { PRINT_STACK }
   | ".v."         { PRINT_DICTIONARY }
   | "->"          { ASSIGN }
-  | id as name    { ID (name) }
   | '['           { LOOP_START }
   | ']'           { LOOP_END }
+  | '<'           { LT }
+  | '>'           { GT }
+  | "line"        { LINE }
+  | "circle"      { CIRCLE }
+  | "ngonloop"    { NGONLOOP }
+  | "makeCircle"  { MAKE_CIRCLE }
+  | "makeEllipse" { MAKE_ELLIPSE }
+  | "makeNgon"    { MAKE_NGON }
+  | id as name    { ID (name) }
   | eof           { raise End_of_file }

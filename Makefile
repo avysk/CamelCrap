@@ -1,5 +1,5 @@
 all:
-	ocamlbuild camelcrap.byte
+	ocamlbuild camelcrap.byte -libs graphics
 clean:
 	ocamlbuild -clean
 

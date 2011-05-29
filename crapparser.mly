@@ -25,9 +25,13 @@
 
 %token PRINT_STACK PRINT_DICTIONARY
 
+%token LT GT
+
 %token LINE CIRCLE ELLIPSE
 
-%token LT GT
+%token NGONLOOP
+
+%token MAKE_CIRCLE MAKE_ELLIPSE MAKE_NGON
 
 %start input
 %type <unit> input
@@ -71,6 +75,9 @@ exp:      NUM               { process_command (Types.Num $1) }
         | PRINT_STACK       { process_command Types.PrintStack }
         | PRINT_DICTIONARY  { process_command Types.PrintDictionary }
         | ASSIGN            { process_command Types.Assign }
+        | MAKE_CIRCLE       { process_command Types.MakeCircle }
+        | MAKE_ELLIPSE      { process_command Types.MakeEllipse }
+        | MAKE_NGON         { process_command Types.MakeNgon }
         | line              { process_command (Types.Line $1) }
         | circle            { process_command (Types.Circle $1) }
         | ellipse           { process_command Types.Ellipse }
@@ -78,28 +85,30 @@ exp:      NUM               { process_command (Types.Num $1) }
         | loop_end          { process_command (Types.Ngonloop $1)}
 ;
 
-line:                 lst LINE              { $1 }
+line:                 lst SEPARATOR LINE    { $1 }
 ;
 
-circle:               lst CIRCLE            { $1 }
+circle:               lst SEPARATOR CIRCLE  { $1 }
 ;
 
 ellipse:              ELLIPSE               { }
 ;
 
-lst:                  LT things GT          { $2 }
+lst:                  LT SEPARATOR things SEPARATOR GT
+                                            { $3 }
 ;
 
 things:               thing                 { [$1] }
-                    | things thing          { List.append $1 [$2] }
+                    | things SEPARATOR thing
+                                            { List.append $1 [$3] }
 ;
 
 thing:                ID                    { Types.String $1 }
                     | NUM                   { Types.Number $1 }
 ;
 
-loop_end:             LOOP_END thing thing thing thing
-                                            { ($2, $3, $4, $5) }
+loop_end:             LOOP_END SEPARATOR thing SEPARATOR thing SEPARATOR thing SEPARATOR thing SEPARATOR NGONLOOP
+                                            { ($3, $5, $7, $9) }
 ;
 
 %%
