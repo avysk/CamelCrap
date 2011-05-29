@@ -18,6 +18,7 @@ rule token = parse
   | '-'           { MINUS }
   | '*'           { MULTIPLY }
   | '/'           { DIVIDE }
+  | '#'           { ID ("#") }
   | ".+"          { P_PLUS }
   | ".-"          { P_MINUS }
   | ".*"          { P_SCALE_UP }
@@ -26,6 +27,7 @@ rule token = parse
   | "..."         { PRINT_STACK }
   | ".v."         { PRINT_DICTIONARY }
   | "->"          { ASSIGN }
+  | "name"        { ASSIGN }
   | '['           { LOOP_START }
   | ']'           { LOOP_END }
   | '<'           { LT }

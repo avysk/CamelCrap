@@ -24,15 +24,15 @@ let get_from_table id =
     failwith ("No binding for " ^ id)
 
 let get id =
-  if id.[0] != 'V'
+  if id = "#" then Point (0., 0.)
+  else if id.[0] != 'V'
   then
     get_from_table id
-  else
-    try
+  else try
       let n = int_of_string (String.sub id 1 (String.length id - 1)) in
       get_vertex n
-    with _ ->
-      get_from_table id
+  with _ ->
+    get_from_table id
 
 let put id value =
   Hashtbl.replace var_table id value
