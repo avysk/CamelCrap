@@ -14,8 +14,8 @@ let string_of_thing = function
                         (string_of_pair l1) ^
                         " to " ^
                         (string_of_pair l2)
-        | P plist -> List.fold_left (fun s p -> s ^ " " ^ (string_of_pair p))
-                                    "Polygon:" plist
+        | P parr -> Array.fold_left (fun s p -> s ^ " " ^ (string_of_pair p))
+                                    "Polygon:" parr
         | C (c, r) -> "Circle: center " ^
                       (string_of_pair c) ^
                       " radius " ^

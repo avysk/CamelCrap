@@ -108,14 +108,16 @@ let pi_2 = acos 0. *. 4.
 
 let in_loop = ref 0
 
+let from_polar radius angle =
+  (cos angle *. radius, sin angle *. radius)
+
 let npoint center total radius rotation i =
+  let r = to_float radius in
   let step = pi_2 /. total  in
   let fi = float_of_int i in
   let rot_f = to_float rotation in
   let angle = fi *. step +. rot_f in
-  let ca = cos angle in
-  let sa = sin angle in
-  let delta = Point (ca, sa) @** radius in
+  let delta = Point (from_polar r angle) in
   center ++ delta
 
 let rec execute_code code =
@@ -163,11 +165,17 @@ let rec execute_code code =
       let f1 = pick_point () in
       push (Figure (E (f1, f2, len)))
   | MakeNgon ->
-      let angle = pick_float () in
-      let r = pick_float () in
+      let rotation = pick_float () in
+      let radius = pick_float () in
       let sides = pick_float () in
-      let center = pick_point () in
-      assert false
+      let centerx, centery = pick_point () in
+      let step = pi_2 /. sides  in
+      push (Figure (P (Array.init (int_of_float sides)
+                                  (fun i ->
+                                    let fi = float_of_int i in
+                                    let angle = fi *. step +. rotation in
+                                    let dx, dy = from_polar radius angle in
+                                    (centerx +. dx, centery +. dy)))))
   | PrintStack -> Debug.print_stack dst
   | LoopStart ->
       let _ = print_endline "recording loop" in

@@ -1,6 +1,6 @@
 type point = float * float
 type line = point * point
-type polygon = point list
+type polygon = point array
 type circle = point * float
 type ellipse = point * point * float
 
