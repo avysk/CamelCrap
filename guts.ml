@@ -10,18 +10,7 @@ let saved_loop_cmds = Queue.create ()
 plot_init ()
 ;;
 
-let pi_2 = acos 0. *. 4.
-
 let in_loop = ref 0
-
-let npoint center total radius rotation i =
-  let r = to_float radius in
-  let step = pi_2 /. total  in
-  let fi = float_of_int i in
-  let rot_f = to_float rotation in
-  let angle = fi *. step +. rot_f in
-  let delta = Point (Geometry.from_polar r angle) in
-  center ++ delta
 
 let rec execute_code code =
   let binop f =
@@ -75,13 +64,10 @@ let rec execute_code code =
       let radius = pick_float () in
       let sides = pick_float () in
       let centerx, centery = pick_point () in
-      let step = pi_2 /. sides  in
-      push_data (Figure (P (Array.init (int_of_float sides)
-                                  (fun i ->
-                                    let fi = float_of_int i in
-                                    let angle = fi *. step +. rotation in
-                                    let dx, dy = Geometry.from_polar radius angle in
-                                    (centerx +. dx, centery +. dy)))))
+      let create_point = Geometry.ith_point sides radius rotation in
+      let ps = Array.init (int_of_float sides) create_point in
+      let translate_point (x, y) = (centerx +. x, centery +. y) in
+      push_data (Figure (P (Array.map translate_point ps)))
   | Ngonloop _ -> failwith "Loop end without loop start"
   | Pop -> ignore (pop_data ())
   | PrintStack -> print_stack ()
@@ -108,11 +94,13 @@ and process_command code =
     | Ngonloop (center, total, radius, rotation) ->
         if !in_loop = 1
         then
-          let _ = print_endline "got to loop" in
           let tot_f = to_float total in
           let n = int_of_float tot_f in
+(*
           let vertices = Array.init n (npoint center tot_f radius rotation) in
           Loop_support.start_loop (n, vertices) ;
+*)
+          Loop_support.start_loop center total radius rotation ;
           let loop_cmds = Queue.copy saved_loop_cmds in
           in_loop := 0 ;
           for i = 1 to n do

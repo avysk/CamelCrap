@@ -12,15 +12,30 @@ let write_var id value =
   Hashtbl.replace var_table id value
 
 let read_var id =
-  if id = "#" then Point (0., 0.)
-  else if id.[0] != 'V'
-  then
-    read_var_from_table id
-  else try
-      let n = int_of_string (String.sub id 1 (String.length id - 1)) in
-      Loop_support.get_vertex n
-  with _ ->
-    read_var_from_table id
+  match String.length id with
+  | 0 -> failwith "Program error: got empty identifier"
+  | 1 ->
+      begin
+        match id with
+        | "#" -> Point (0., 0.)
+        | _ -> read_var_from_table id
+      end
+  | 2 ->
+      begin
+        match id.[0] with
+        | 'V' ->
+            begin
+              try
+                let n = int_of_string (String.sub id 1 (String.length id - 1)) in
+                Loop_variables.get_vertex n
+        with _ -> read_var_from_table id
+            end
+        | 'L' ->
+            if id.[1] == 'C' then Loop_variables.get_loop_count ()
+            else failwith "Not implemented"
+        | _ -> read_var_from_table id
+      end
+  | _ -> read_var_from_table id
 
 let get_float id =
   match read_var id with

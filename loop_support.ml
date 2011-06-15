@@ -1,29 +1,26 @@
 open Types
+open Variables
+open Binops
 
-let loop_count = Stack.create ()
-
-let loop_vertices : (int * thing array) Stack.t = Stack.create ()
-
-let get_vertex i =
-  let index = i + (Stack.top loop_count) in
-  let n, vs = (Stack.top loop_vertices) in
-  let k = if index >= n then index - n else index in
-  vs.(k)
-
-let drop_loop_count () = ignore (Stack.pop loop_count)
-
-let drop_vertices () = ignore (Stack.pop loop_vertices)
-
-let start_loop vs =
-  Stack.push vs loop_vertices ;
-  Stack.push 0 loop_count ;
+let start_loop center total radius rotation =
+  let tot_f = to_float total in
+  let n = int_of_float tot_f in
+  let rad_f = to_float radius in
+  let rot_f = to_float rotation in
+  let ith_vertex i = center ++ Point (Geometry.ith_point tot_f rad_f rot_f i) in
+  let vertices = Array.init n ith_vertex in
+  Loop_variables.add_loop_vertices (n, vertices) ;
+  Loop_variables.init_loop_count () ;
   Data.new_data_stack ()
 
 let iteration_end i =
+  Loop_variables.next_loop_count ()
+(*
   drop_loop_count () ;
   Stack.push (i - 1) loop_count
+*)
 
 let end_loop () =
-  drop_loop_count () ;
-  drop_vertices () ;
+  Loop_variables.drop_loop_count () ;
+  Loop_variables.drop_vertices () ;
   Data.drop_data_stack ()
